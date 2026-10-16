@@ -168,3 +168,7 @@ body:has(#roomEscapeBar:not([hidden])) #app{padding-bottom:65px}
 .voteClockHand{transition:transform 180ms linear;}
 
 #appVersion{position:fixed;bottom:6px;left:8px;font-size:11px;color:#aaa;opacity:.8;z-index:9999;pointer-events:none;background:#111a;padding:2px 5px;border-radius:4px}.voteError{color:#ff9999;font-weight:700}
+
+/* RC5.8.7.13: clock hand pivots from center and points at the first seat (12 o’clock). */
+.voteClockHand{top:16%;height:34%;transform-origin:50% 100%;transition:transform 180ms linear;}
+#appVersion{position:fixed;left:12px;top:calc(env(safe-area-inset-top, 0px) + 8px);bottom:auto;z-index:9999;background:#30264d;color:#d8c8ff;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:800;pointer-events:none;}
