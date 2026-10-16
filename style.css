@@ -72,3 +72,49 @@ main{padding:12px 10px 34px}.card{border-radius:12px;padding:11px;margin:8px 0}.
 /* RC5.8.7.2: large screen left Q&A, right grimoire */
 @media(min-width:1000px) and (orientation:landscape){body{padding-right:60.5vw!important}#app{max-width:none!important;width:100%!important}#grimSplitDock{position:fixed;z-index:90;right:0;top:0;bottom:0;width:60%;background:#10121a;padding:12px;overflow:auto;display:flex;flex-direction:column;gap:10px;border-left:2px solid #685236}#grimSplitDock .grimBoard{flex:1 0 auto;min-height:420px;height:55vh}#app .grimOpenBtn{display:none}}
 .grimPawn.ghostSpent{filter:grayscale(1) brightness(.35);opacity:.72}.grimPawn.dead:not(.ghostSpent){filter:grayscale(.8) brightness(.7);opacity:.9}.grimPawn.dead:not(.ghostSpent) .grimCircle{border-color:#e3c37a}.grimPawn.ghostSpent .grimCircle{border-color:#555}.grimExtraRoles{position:absolute;top:-9px;right:-7px;display:flex;gap:2px;pointer-events:none}.grimExtra{width:24px;height:24px;border-radius:50%;border:2px solid #e0bd7e;background:#171923;display:flex;align-items:center;justify-content:center;overflow:hidden}.grimExtraIcon{width:20px;height:20px;object-fit:contain}.grimStates button{flex:1 1 125px}.secretRole .setupAckButton{margin-top:36px!important}.secretRole button.secondary{margin-bottom:20px}
+
+/* RC5.8.7.3: clearer grimoire pawns; keep life-state shading on the image, not the rim */
+.grimPawn{min-width:90px;max-width:118px;gap:1px;z-index:1}
+.grimPawn.selected{z-index:5}
+.grimCircle{width:64px;height:64px;flex-shrink:0}
+.grimRoleIcon{width:53px;height:53px}
+.grimPawn.dead:not(.ghostSpent),.grimPawn.ghostSpent{filter:none;opacity:1}
+.grimPawn.dead:not(.ghostSpent) .grimCircle{border-color:#b68c45}
+.grimPawn.dead:not(.ghostSpent) .grimCircle img{filter:grayscale(1);opacity:.72}
+.grimPawn.ghostSpent .grimCircle img{filter:grayscale(1) brightness(.4);opacity:.8}
+.grimPlayerName{font-size:12px;line-height:1.15;max-width:108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grimRoleName{font-size:10px;line-height:1.1;color:#e5d4b9;display:block;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grimBadges{max-width:110px;line-height:1.1}
+.grimBadges span{max-width:90px;font-size:9px}
+.grimExtraRoles{top:-9px;right:-15px;gap:3px;z-index:2}
+.grimExtra{width:31px;height:31px}
+.grimExtraIcon{width:26px;height:26px}
+/* On large landscape night screens show all three working surfaces side by side. */
+@media(min-width:1000px) and (orientation:landscape){
+ body:has(#nightDrawer){padding-right:69vw!important}
+ body:has(#nightDrawer) #grimSplitDock{right:27%;width:42%;}
+ body:has(#nightDrawer) #nightDrawer{position:fixed;display:flex;flex-direction:column;transform:none!important;right:0;top:0;bottom:0;width:27%;z-index:91;box-shadow:none;border-left:2px solid #685236;padding:12px;transition:none}
+ body:has(#nightDrawer) #nightDrawer .nightList{flex:1;overflow:auto;align-content:start}
+ body:has(#nightDrawer) #nightDrawer .drawerHead button{display:none}
+ body:has(#nightDrawer) .nightTab,body:has(#nightDrawer) .nightShade{display:none!important}
+ body:has(#nightDrawer) #grimSplitDock .grimBoard{min-height:350px}
+}
+
+/* RC5.8.7.4: strict phase-scoped desktop layout. Mobile rules above unchanged. */
+@media(min-width:1000px) and (orientation:landscape){
+ body:not(.grim-night-layout):not(.grim-day-layout){padding-right:0!important}
+ body:not(.grim-night-layout):not(.grim-day-layout) #app{max-width:900px!important;width:100%!important;margin-inline:auto!important}
+ body:not(.grim-night-layout):not(.grim-day-layout) #grimSplitDock{display:none!important}
+ body.grim-night-layout{padding-right:69vw!important}
+ body.grim-day-layout{padding-right:60.5vw!important}
+ body.grim-night-layout #app,body.grim-day-layout #app{max-width:none!important;width:100%!important}
+ body.grim-night-layout #grimSplitDock{right:27%!important;width:42%!important}
+ body.grim-day-layout #grimSplitDock{right:0!important;width:60%!important}
+ body.grim-night-layout #nightDrawer{position:fixed;display:flex;flex-direction:column;transform:none!important;right:0;top:0;bottom:0;width:27%;z-index:91;box-shadow:none;border-left:2px solid #685236;padding:12px;transition:none}
+ body.grim-night-layout #nightDrawer .nightList{flex:1;overflow:auto;align-content:start}
+ body.grim-night-layout #nightDrawer .drawerHead button{display:none}
+ body.grim-night-layout .nightTab,body.grim-night-layout .nightShade{display:none!important}
+}
+.grimLockBtn{white-space:nowrap;flex-shrink:0;padding:7px 9px;font-size:12px}
+.grimTools{flex-wrap:wrap}
+.grimTools label{display:flex;align-items:center;gap:5px}
