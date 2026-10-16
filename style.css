@@ -163,3 +163,8 @@ body:has(#roomEscapeBar:not([hidden])) #app{padding-bottom:65px}
 #roomEscapeBar{display:none!important}.playerExitTop{display:flex;justify-content:flex-end;margin:0 0 10px}.playerExitTop button{font-size:13px}.voteEndTop{display:flex;justify-content:flex-end;margin-bottom:10px}.voteTestPanel{margin-top:10px;padding:10px;border:1px dashed #6b638b;border-radius:10px}.voteTestPanel label{display:flex;gap:8px;align-items:center;font-weight:700}.voteTestPanel input{width:18px;height:18px}.voteTestPanel small{display:block;color:#aaa;margin-top:5px}.voteSeatYes,.voteSeatNo{position:absolute;right:-7px;top:-13px;font-size:25px;line-height:1;font-weight:1000;text-shadow:0 2px 4px black}.voteSeatYes{color:#4bf3a0}.voteSeatNo{color:#ff6767}.voteClockName{overflow:visible;white-space:normal;word-break:break-word}.voteClockCenter{font-size:23px}
 
 .buildBadge{display:inline-block;margin:4px 0 10px;padding:5px 9px;border-radius:8px;background:#292445;color:#c7baff;font-size:12px;font-weight:800}.voteTestPanel[hidden]{display:none!important}
+
+/* RC5.8.7.11: continuously rotating execution-vote hand */
+.voteClockHand{transition:transform 180ms linear;}
+
+#appVersion{position:fixed;bottom:6px;left:8px;font-size:11px;color:#aaa;opacity:.8;z-index:9999;pointer-events:none;background:#111a;padding:2px 5px;border-radius:4px}.voteError{color:#ff9999;font-weight:700}
