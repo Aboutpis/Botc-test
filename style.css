@@ -158,3 +158,6 @@ main{padding:12px 10px 34px}.card{border-radius:12px;padding:11px;margin:8px 0}.
 #roomEscapeBar button{pointer-events:auto;width:auto;min-height:42px;padding:9px 14px;border-radius:24px;font-size:14px;font-weight:800;box-shadow:0 5px 20px #000b;border:1px solid #d39c9c;background:#55262b;color:white}
 #roomEscapeBar .escapeLeave{background:#26394d;border-color:#7391b1}
 body:has(#roomEscapeBar:not([hidden])) #app{padding-bottom:65px}
+
+/* RC5.8.7.8: top-of-page participant exit, never floating */
+#roomEscapeBar{display:none!important}.playerExitTop{display:flex;justify-content:flex-end;margin:0 0 10px}.playerExitTop button{font-size:13px}.voteEndTop{display:flex;justify-content:flex-end;margin-bottom:10px}.voteTestPanel{margin-top:10px;padding:10px;border:1px dashed #6b638b;border-radius:10px}.voteTestPanel label{display:flex;gap:8px;align-items:center;font-weight:700}.voteTestPanel input{width:18px;height:18px}.voteTestPanel small{display:block;color:#aaa;margin-top:5px}.voteSeatYes,.voteSeatNo{position:absolute;right:-7px;top:-13px;font-size:25px;line-height:1;font-weight:1000;text-shadow:0 2px 4px black}.voteSeatYes{color:#4bf3a0}.voteSeatNo{color:#ff6767}.voteClockName{overflow:visible;white-space:normal;word-break:break-word}.voteClockCenter{font-size:23px}
