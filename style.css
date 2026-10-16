@@ -151,3 +151,10 @@ main{padding:12px 10px 34px}.card{border-radius:12px;padding:11px;margin:8px 0}.
 .voteDayCard h3{font-size:16px;margin:16px 0 9px}.voteHistoryRow{display:flex;justify-content:space-between;padding:10px;border-top:1px solid #3b3d4b}.voteHistoryRow strong{color:#f6d68d}
 @media(max-width:420px){.voteClockName{min-width:38px;padding:5px 2px}.voteClockCenter{width:53px;height:53px;font-size:25px}.voteClockHand{width:5px}}
 @media(min-width:1000px) and (orientation:landscape){body:has(#voteScreen){padding-right:0!important}body:has(#voteScreen) #app{max-width:900px!important;width:100%!important;margin-inline:auto!important}}
+
+/* RC5.8.7.7 persistent room controls; accessible over grimoire and vote screens */
+#roomEscapeBar[hidden]{display:none!important}
+#roomEscapeBar{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:2147483000;pointer-events:none}
+#roomEscapeBar button{pointer-events:auto;width:auto;min-height:42px;padding:9px 14px;border-radius:24px;font-size:14px;font-weight:800;box-shadow:0 5px 20px #000b;border:1px solid #d39c9c;background:#55262b;color:white}
+#roomEscapeBar .escapeLeave{background:#26394d;border-color:#7391b1}
+body:has(#roomEscapeBar:not([hidden])) #app{padding-bottom:65px}
