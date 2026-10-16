@@ -126,3 +126,28 @@ main{padding:12px 10px 34px}.card{border-radius:12px;padding:11px;margin:8px 0}.
 .endRevealRow:last-child{border-bottom:0}.endRevealRow span{color:#f4d18c;text-align:right}
 #grimOverlay .grimTools .grimLockBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;min-height:40px;align-items:center;justify-content:center}
 @media(max-width:550px){#grimOverlay .grimTools{display:grid;grid-template-columns:1fr auto;gap:8px}#grimOverlay .grimTools>span{grid-column:1/-1}#grimOverlay .grimTools .grimLockBtn{grid-column:1;grid-row:2}#grimOverlay .grimTools label{grid-column:2;grid-row:2}}
+/* RC5.8.7.6: inset perimeter grimoire and full-screen role-free vote clock */
+.grimGridVisual{position:absolute;inset:17%;display:grid;grid-template-columns:repeat(var(--grim-n),1fr);grid-template-rows:repeat(var(--grim-n),1fr);pointer-events:none;opacity:.28}
+.grimGridVisual span{border:1px solid #c9a77377}
+.grimGridVisual .grimGridCenter{background:#14121ac4;border-color:#332b25}
+.grimClockCore{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;display:flex;align-items:center;flex-direction:column;gap:3px;color:#d8b979;opacity:.75;font-size:26px}
+.grimClockCore small{font-size:10px}
+.grimBoard .grimPawn{z-index:2}
+.voteScreen{max-width:780px;margin:0 auto;padding:15px 4px 30px;text-align:center}
+.voteHeading{font-size:25px;font-weight:900;color:#f4d595;margin-bottom:8px}
+.voteNominee{font-size:19px;margin-bottom:14px}
+.voteClockFace{position:relative;width:min(88vw,440px);height:min(88vw,440px);margin:0 auto 12px;border-radius:50%;border:4px solid #b78b4d;background:radial-gradient(circle,#272c3a 0%,#151922 72%);box-shadow:0 0 35px #0009,inset 0 0 35px #0009}
+.voteClockFace:after{content:'';position:absolute;left:50%;top:50%;width:15px;height:15px;transform:translate(-50%,-50%);border-radius:50%;background:#ff6969;z-index:5}
+.voteClockHand{position:absolute;left:50%;top:50%;width:7px;height:34%;background:linear-gradient(#ff4c4c,#d69a7d);border-radius:8px;transform-origin:50% 100%;transform:translateX(-50%) rotate(0rad);z-index:2;box-shadow:0 0 8px #ff4545a8;pointer-events:none}
+.voteClockCenter{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:6;border-radius:50%;background:#121722;border:2px solid #d5b479;width:64px;height:64px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:30px;font-weight:900;line-height:1;color:#fff;pointer-events:none}
+.voteClockCenter small{font-size:10px;margin-top:4px;color:#e5c38d}
+.voteClockName{position:absolute;transform:translate(-50%,-50%);max-width:25%;min-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#222d3e;border:2px solid #6e7b8c;color:white;border-radius:11px;padding:7px 3px;font-size:clamp(11px,3vw,17px);font-weight:800;z-index:4;box-shadow:0 3px 7px #0009}
+.voteClockName.voteClockActive{background:#74551f;border:3px solid #ffe090;box-shadow:0 0 14px #e6b45a;color:#fff}
+.voteCurrentName{font-size:20px;font-weight:800;margin:14px 0;color:#ffe2a4}
+.voteLiveVotes{margin:12px 0;padding:12px;border:1px solid #5c6074;border-radius:12px;background:#202536;text-align:left}
+.voteLiveVotes b{font-size:20px;color:#ffdb96}.voteLiveVotes div{margin-top:7px;font-size:14px;color:#dbe2ef}
+.voteAgree,.voteStartButton{width:100%;min-height:58px;font-size:20px;font-weight:900;background:#386b51;border:1px solid #76d1a0;color:white}
+.voteAgree:disabled{opacity:.48}.voteAckCount{color:#dfc58e;font-size:15px}.voteResult{margin:40px auto 25px;padding:28px 10px;border:2px solid #9b804e;border-radius:18px;font-size:23px}.voteResult strong{display:block;font-size:38px;margin-top:12px;color:#ffe09b}
+.voteDayCard h3{font-size:16px;margin:16px 0 9px}.voteHistoryRow{display:flex;justify-content:space-between;padding:10px;border-top:1px solid #3b3d4b}.voteHistoryRow strong{color:#f6d68d}
+@media(max-width:420px){.voteClockName{min-width:38px;padding:5px 2px}.voteClockCenter{width:53px;height:53px;font-size:25px}.voteClockHand{width:5px}}
+@media(min-width:1000px) and (orientation:landscape){body:has(#voteScreen){padding-right:0!important}body:has(#voteScreen) #app{max-width:900px!important;width:100%!important;margin-inline:auto!important}}
