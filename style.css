@@ -118,3 +118,11 @@ main{padding:12px 10px 34px}.card{border-radius:12px;padding:11px;margin:8px 0}.
 .grimLockBtn{white-space:nowrap;flex-shrink:0;padding:7px 9px;font-size:12px}
 .grimTools{flex-wrap:wrap}
 .grimTools label{display:flex;align-items:center;gap:5px}
+
+/* RC5.8.7.5: end-of-game reveal and mobile grimoire lock visibility */
+.endReveal{margin:20px 0;padding:16px;border:1px solid #76613e;border-radius:14px;background:#191b26;text-align:left}
+.endReveal h3{text-align:center;margin:0 0 14px;color:#f5d796}
+.endRevealRow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 6px;border-bottom:1px solid #373a47;font-size:16px}
+.endRevealRow:last-child{border-bottom:0}.endRevealRow span{color:#f4d18c;text-align:right}
+#grimOverlay .grimTools .grimLockBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;min-height:40px;align-items:center;justify-content:center}
+@media(max-width:550px){#grimOverlay .grimTools{display:grid;grid-template-columns:1fr auto;gap:8px}#grimOverlay .grimTools>span{grid-column:1/-1}#grimOverlay .grimTools .grimLockBtn{grid-column:1;grid-row:2}#grimOverlay .grimTools label{grid-column:2;grid-row:2}}
