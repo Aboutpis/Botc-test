@@ -61,14 +61,19 @@ function showJoin(){h(`<div class="top"><div class="brand">참가자로 입장</
 async function createRoom(key){try{const data=await loadScript(key);await makeRoom(data,false)}catch(e){toast(e.message)}}
 async function createCustomRoom(){const f=$('#jsonFile')?.files?.[0];if(!f)return toast('JSON 파일을 선택해 주세요.');try{const data=JSON.parse(await f.text());if(!Array.isArray(data)||!data.length)throw Error('JSON 형식이 올바르지 않습니다.');await makeRoom(data,true)}catch(e){toast('JSON을 읽지 못했습니다: '+e.message)}}
 async function makeRoom(script,custom){
- // Reserve a code atomically: never overwrite another active or ended room.
+ // Firebase rules deny reading an empty meta node, so do not use a client transaction here.
+ // A write to another user's room is denied by the existing ownerUid security rule.
  let roomId=null;
  for(let attempt=0;attempt<30;attempt++){
-  const candidate=code(), metaRef=db.ref(`rooms/${candidate}/public/meta`);
-  const result=await metaRef.transaction(existing=>existing===null?{ownerUid:uid,status:'WAITING',phase:'WAITING',nightNumber:0,dayNumber:0,currentRound:0,scriptName:scriptName(script),custom:!!custom,createdAt:firebase.database.ServerValue.TIMESTAMP}:undefined,undefined,false);
-  if(result.committed){roomId=candidate;break;}
+  const candidate=code();
+  try{
+   await db.ref(`rooms/${candidate}/public/meta`).set({ownerUid:uid,status:'WAITING',phase:'WAITING',nightNumber:0,dayNumber:0,currentRound:0,scriptName:scriptName(script),custom:!!custom,createdAt:firebase.database.ServerValue.TIMESTAMP});
+   roomId=candidate;break;
+  }catch(e){
+   if(e.code!=='PERMISSION_DENIED'&&e.code!=='permission_denied')throw e;
+  }
  }
- if(!roomId)throw Error('사용 가능한 방 코드를 확보하지 못했습니다. 다시 시도해 주세요.');
+ if(!roomId)throw Error('방 코드 생성이 거부되었습니다. Firebase 인증 및 데이터베이스 규칙을 확인해 주세요.');
  try{
   await db.ref(`rooms/${roomId}/public/script`).set(script);
   await db.ref(`rooms/${roomId}/private/st`).set({ownerUid:uid});
