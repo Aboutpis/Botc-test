@@ -3,11 +3,12 @@ let voteTestMode=false;let voteTestSettings={};let voteCurrent=null,voteBallots=
 let voteLocalYesId='',voteLocalYesPending=false,voteResultPollBusy=false,voteResultPollAt=0;
 let voteBallotSyncBusy=false,voteBallotSyncAt=0,voteBallotSyncId='';
 let voteAckSubmitting=false,voteAckPendingKey='';
+let voteAckReconcileBusy=false,voteAckReconcileAt=0;
 let voteSyncHandle=null;let voteFirstWatchHandle=null;let voteFirstSeen=false;let voteFirstWatchBusy=false;let voteTickHandle=null,voteTickBusy=false,voteRenderedId='',voteRenderedStage='',voteSubmitting=false,voteUiKey='';
 function voteNow(){return Date.now()+(window._serverOffset||0)}
 function voteIsActive(){return !!(voteCurrent&&voteCurrent.stage&&voteCurrent.stage!=='CLOSED'&&currentMeta?.phase==='DAY')}
 function voteStartListeners(){
- voteCurrent=null;voteBallots={};voteAcks={};voteHistory={};voteMyRight=false;voteRenderedId='';voteRenderedStage='';voteFirstSeen=false;voteFirstWatchBusy=false;voteLocalYesId='';voteLocalYesPending=false;voteResultPollAt=0;voteBallotSyncAt=0;voteBallotSyncId='';voteAckSubmitting=false;voteAckPendingKey='';
+ voteCurrent=null;voteBallots={};voteAcks={};voteHistory={};voteMyRight=false;voteRenderedId='';voteRenderedStage='';voteFirstSeen=false;voteFirstWatchBusy=false;voteLocalYesId='';voteLocalYesPending=false;voteResultPollAt=0;voteBallotSyncAt=0;voteBallotSyncId='';voteAckSubmitting=false;voteAckPendingKey='';voteAckReconcileBusy=false;voteAckReconcileAt=0;
  listen(db.ref(`rooms/${room}/public/vote/current`),'value',s=>{const before=voteIsActive();voteCurrent=s.val();if(voteCurrent?.stage==='RUNNING'||voteCurrent?.stage==='RESULT')voteFirstSeen=true;if(currentMeta?.phase==='DAY'){if(voteIsActive()){grimClearSurface();voteRender();}else if(before||document.getElementById('voteScreen'))renderByPhase(currentMeta);else voteRefreshDay();} });
  listen(db.ref(`rooms/${room}/public/vote/ballots`),'value',s=>{voteBallots=s.val()||{};if(voteIsActive())voteUpdateLive()});
  listen(db.ref(`rooms/${room}/public/vote/acks`),'value',s=>{voteAcks=s.val()||{};if(voteAckPendingKey&&voteAcks[voteAckPendingKey]===true){voteAckSubmitting=false;voteAckPendingKey='';}if(voteIsActive())voteUpdateLive()});
@@ -40,7 +41,7 @@ function voteSyncScreen(){
  if(voteIsActive()){
   const screen=document.getElementById('voteScreen');
   if(!screen||voteRenderedId!==voteCurrent.id||voteRenderedStage!==voteCurrent.stage){grimClearSurface();voteRender();}
-  else {voteUpdateLive();voteReconcileResult();voteReconcileBallots();}
+  else {voteUpdateLive();voteReconcileResult();voteReconcileBallots();voteReconcileAcks();}
  }else if(document.getElementById('voteScreen'))renderByPhase(currentMeta);
 }
 async function voteReconcileResult(){
@@ -54,6 +55,30 @@ async function voteReconcileResult(){
   const fresh=snap.val();
   if(fresh&&fresh.id===v.id&&fresh.stage==='RESULT'&&voteCurrent?.id===v.id){voteCurrent=fresh;voteRender();}
  }catch(e){console.warn('vote result reconcile',e)}finally{voteResultPollBusy=false}
+}
+async function voteReconcileAcks(){
+ // Player clients can miss remote ack events while their own ack is delivered.
+ // Re-read the complete server ack map and current vote state until the ST closes it.
+ if(isST||voteAckReconcileBusy||!voteIsActive()||voteCurrent.stage!=='RESULT')return;
+ if(Date.now()-voteAckReconcileAt<1100)return;
+ voteAckReconcileAt=Date.now();voteAckReconcileBusy=true;
+ const watchRoom=room,watchId=voteCurrent.id;
+ try{
+  const [acksSnap,currentSnap]=await Promise.all([
+   db.ref(`rooms/${watchRoom}/public/vote/acks`).once('value'),
+   db.ref(`rooms/${watchRoom}/public/vote/current`).once('value')
+  ]);
+  if(room!==watchRoom||voteCurrent?.id!==watchId)return;
+  const fresh=currentSnap.val();
+  if(!fresh||fresh.id!==watchId||fresh.stage==='CLOSED'){
+   voteCurrent=null;voteAcks={};voteRenderedId='';voteRenderedStage='';
+   if(currentMeta?.phase==='DAY')renderByPhase(currentMeta);
+   return;
+  }
+  voteAcks=acksSnap.val()||{};
+  voteUiKey='';voteUpdateLive();
+ }catch(e){console.warn('ack reconciliation',e)}
+ finally{voteAckReconcileBusy=false}
 }
 async function voteReconcileBallots(){
  // Independent authoritative snapshot: a missed Firebase value event must not leave
@@ -93,7 +118,7 @@ async function voteConfirmStart(startUid){if(!isST||voteIsActive())return;const 
 function votePhaseInfo(v){const elapsed=voteNow()-(v.startedAt||voteNow());const n=v.order?.length||0;if(elapsed<5000)return {preparing:true,index:-1,left:Math.ceil((5000-elapsed)/1000)};const idx=Math.min(n-1,Math.floor((elapsed-5000)/5000));return {preparing:false,index:idx,left:Math.max(0,Math.ceil((5000-(elapsed-5000-idx*5000))/1000))}}
 function voteClockHtml(v){const order=v.order||[],info=votePhaseInfo(v),current=info.index>=0?order[info.index]:null;return `<div class="voteClock" id="voteClock"><div class="voteClockFace"><div class="voteClockHand" id="voteClockHand"></div><div class="voteClockCenter" id="voteClockCenter">5<small>초</small></div>${order.map((p,i)=>{const angle=2*Math.PI*(i+1)/(order.length+1)-Math.PI/2;const x=50+42*Math.cos(angle),y=50+42*Math.sin(angle);return `<div class="voteClockName" id="voteSeat${i}" style="left:${x}%;top:${y}%">${esc(p.name)}</div>`}).join('')}</div><div class="voteCurrentName" id="voteCurrentName">준비 중</div></div>`}
 function voteRender(){if(!voteIsActive())return;const v=voteCurrent;const same=document.getElementById('voteScreen')&&voteRenderedId===v.id&&voteRenderedStage===v.stage;if(same){voteUpdateLive();return}voteRenderedId=v.id;voteRenderedStage=v.stage;voteUiKey='';
- h(`<div id="voteScreen" class="voteScreen">${isST?'<div class="voteEndTop"><button class="danger" onclick="endGame()">🔴 게임 종료</button></div>':''}<div class="voteHeading">🗳️ 처형 투표 <small class="voteBuild">RC5.8.7.23</small></div><div class="voteNominee">후보: <b>${esc(v.nomineeName)}</b></div>${voteClockHtml(v)}<div id="voteLive"></div></div>`);voteUpdateLive()}
+ h(`<div id="voteScreen" class="voteScreen">${isST?'<div class="voteEndTop"><button class="danger" onclick="endGame()">🔴 게임 종료</button></div>':''}<div class="voteHeading">🗳️ 처형 투표 <small class="voteBuild">RC5.8.7.24</small></div><div class="voteNominee">후보: <b>${esc(v.nomineeName)}</b></div>${voteClockHtml(v)}<div id="voteLive"></div></div>`);voteUpdateLive()}
 function voteUpdateLive(){if(!voteIsActive())return;const v=voteCurrent,el=document.getElementById('voteLive');if(!el)return;if(v.stage==='RESULT'&&v.finalBallots)voteBallots=v.finalBallots;const localYes=!isST&&voteLocalYesId===v.id;const votes=Object.keys(voteBallots||{}).filter(k=>voteBallots[k]===true);const names=(v.order||[]).filter(p=>votes.includes(p.uid)).map(p=>p.name);const count=names.length;
  votePaintSeats(v);if(v.stage==='RESULT'){voteReconcileBallots();const all=(v.order||[]).length+1,done=['ST',...(v.order||[]).map(p=>p.uid)].filter(k=>voteAcks[k]===true).length;const ackKey=isST?'ST':uid;const waiting=voteAckSubmitting&&voteAckPendingKey===ackKey;const key=`result:${done}:${all}:${voteAcks[ackKey]?'yes':'no'}:${waiting}`;if(key===voteUiKey)return;voteUiKey=key;el.innerHTML=`<p class="voteSummary">투표 종료 · 찬성 ${Number(v.count)||0}표 · 시계판에서 ✓ / ✕ 확인</p><button class="voteAgree" onclick="voteAcknowledge()" ${voteAcks[ackKey]||waiting?'disabled':''}>${voteAcks[ackKey]?'✓ 확인 완료 · 대기 중':waiting?'✓ 확인 전송 중':'✓ 확인 완료'}</button><p class="voteAckCount">확인 ${done} / ${all}명</p>`;return}
  const info=votePhaseInfo(v),p=v.order?.[info.index],canVote=!isST&&p?.uid===uid&&voteMyRight&&!voteBallots[uid]&&!localYes&&info.left>0;
