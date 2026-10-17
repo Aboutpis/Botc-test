@@ -1,0 +1,31 @@
+/* RC5.8.7.36: visual-only theme; does not change gameplay, Firebase or JS. */
+:root{--gothic-gold:#d5b276;--gothic-border:#88623b;--gothic-ink:#080b13}
+body:not([data-scene="home"]){background:#080b12!important;background-image:linear-gradient(180deg,rgba(3,5,11,.30) 0%,rgba(4,5,9,.74) 39%,#08090d 100%),url('./scene-lobby.webp')!important;background-position:center top!important;background-repeat:no-repeat!important;background-size:cover!important;background-attachment:fixed!important;color:#f2e7d1!important;min-height:100svh}
+body[data-scene="join"]{background-image:linear-gradient(180deg,rgba(3,7,14,.30),rgba(4,6,13,.86) 65%,#07090d),url('./scene-join.webp')!important}
+body[data-scene="role-wait"]{background-image:linear-gradient(180deg,rgba(10,4,3,.34),rgba(9,5,7,.89) 65%,#08080b),url('./scene-role-wait.webp')!important}
+body[data-scene="role-reveal"]{background-image:linear-gradient(180deg,rgba(12,6,2,.30),rgba(9,5,5,.90) 65%,#08080b),url('./scene-role-reveal.webp')!important}
+body[data-scene="st-night"],body[data-scene="player-night"]{background-image:linear-gradient(180deg,rgba(3,8,22,.35),rgba(3,7,17,.87) 65%,#07090f),url('./scene-night.webp')!important}
+body[data-scene="st-day"]{background-image:linear-gradient(180deg,rgba(25,12,6,.30),rgba(15,9,7,.88) 65%,#0b0909),url('./scene-day.webp')!important}
+body:not([data-scene="home"]) #app{width:min(100% - 24px, 760px)!important;max-width:760px!important;margin:0 auto!important;box-sizing:border-box!important;padding:clamp(14px,3vw,32px) 0 60px!important;min-height:100svh}
+body:not([data-scene="home"]) .top{background:linear-gradient(100deg,rgba(6,9,17,.94),rgba(18,14,14,.78))!important;border:1px solid var(--gothic-border)!important;border-radius:12px!important;padding:12px 14px!important;box-shadow:0 8px 30px #0008, inset 0 1px #d4ac7540!important;gap:8px!important}
+body:not([data-scene="home"]) .brand,body:not([data-scene="home"]) .phase{color:#f4d497!important;text-shadow:0 2px 9px #000!important;font-family:Georgia,'Noto Serif KR',serif!important}
+body:not([data-scene="home"]) .card,body:not([data-scene="home"]) .notice,body:not([data-scene="home"]) .panel{background:linear-gradient(155deg,rgba(12,16,25,.96),rgba(13,10,12,.92))!important;border:1px solid #98734a!important;border-radius:13px!important;box-shadow:0 8px 28px #0009,inset 0 0 0 1px #e5bb7130!important;backdrop-filter:blur(7px)}
+body:not([data-scene="home"]) button:not(.secondary):not(.danger){background:linear-gradient(#9d2732,#5b0b15)!important;color:#fff0d5!important;border:1px solid #d6a16e!important;box-shadow:inset 0 1px #f8bd9a55,0 4px 12px #0009!important;border-radius:9px!important}
+body:not([data-scene="home"]) button.secondary{background:linear-gradient(#173044,#09131f)!important;color:#f4dfb8!important;border:1px solid #9c7548!important;border-radius:9px!important}
+body:not([data-scene="home"]) button.danger{border:1px solid #aa6452!important}
+body:not([data-scene="home"]) input,body:not([data-scene="home"]) select,body:not([data-scene="home"]) textarea{background:rgba(7,10,16,.92)!important;color:#fff1d6!important;border:1px solid #98734a!important;border-radius:7px!important}
+body:not([data-scene="home"]) .muted{color:#d4c4ae!important}
+body:not([data-scene="home"]) .code{color:#ffe1a0!important;text-shadow:0 0 18px #be732b88}
+body:not([data-scene="home"]) .pill{border-color:#8b704d!important;color:#f1d9b1!important}
+body:not([data-scene="home"]) button:focus-visible{outline:3px solid #ffd38b!important;outline-offset:2px!important}
+/* Mobile home remains the image approved and already working. */
+/* Tablet: avoid a narrow letterboxed phone image; display wider atmosphere around it. */
+@media (min-width:800px) and (orientation:landscape){
+ body[data-scene="home"]{background:#09070a url('./scene-home.webp') center center / cover no-repeat fixed!important}
+ body[data-scene="home"] #app{min-height:100svh!important}
+ body[data-scene="home"] .homeScene{height:min(95svh,960px)!important;width:min(63.333svh,640px)!important;box-shadow:0 0 70px 45px #09070ab8!important;border-radius:8px!important}
+ body:not([data-scene="home"]) #app{max-width:1100px!important;width:calc(100% - 72px)!important}
+ body:not([data-scene="home"]) .card{max-width:none}
+}
+@media (max-width:480px){body:not([data-scene="home"]) #app{width:calc(100% - 20px)!important;padding-top:10px!important}body:not([data-scene="home"]) .top{padding:10px!important}}
+@media (prefers-reduced-motion:reduce){body:not([data-scene="home"]){background-attachment:scroll!important}}
