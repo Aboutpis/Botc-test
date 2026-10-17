@@ -180,3 +180,6 @@ body:has(#roomEscapeBar:not([hidden])) #app{padding-bottom:65px}
 .playerExitTop{margin-bottom:24px!important;}
 .playerExitTop+.top{margin-top:6px;}
 @media(max-width:520px){.playerExitTop{margin-bottom:28px!important;}}
+
+/* RC5.8.7.18: version visible on both voting screens for cross-device cache diagnosis. */
+.voteBuild{font-size:10px;font-weight:400;color:#a6a4b1;opacity:.65;white-space:nowrap;}

@@ -1,6 +1,6 @@
 /* RC5.8.7.6 synchronized day nomination voting. Never publishes roles or ghost status. */
 let voteTestMode=false;let voteTestSettings={};let voteCurrent=null,voteBallots={},voteAcks={},voteHistory={},voteMyRight=false;
-let voteTickHandle=null,voteTickBusy=false,voteRenderedId='',voteRenderedStage='',voteSubmitting=false,voteUiKey='';
+let voteSyncHandle=null;let voteTickHandle=null,voteTickBusy=false,voteRenderedId='',voteRenderedStage='',voteSubmitting=false,voteUiKey='';
 function voteNow(){return Date.now()+(window._serverOffset||0)}
 function voteIsActive(){return !!(voteCurrent&&voteCurrent.stage&&voteCurrent.stage!=='CLOSED'&&currentMeta?.phase==='DAY')}
 function voteStartListeners(){
@@ -11,8 +11,18 @@ function voteStartListeners(){
  listen(db.ref(`rooms/${room}/public/vote/history`),'value',s=>{voteHistory=s.val()||{};if(currentMeta?.phase==='DAY'&&!voteIsActive())voteRefreshDay()});
  if(!isST)listen(db.ref(`rooms/${room}/private/playerVoteRights/${uid}`),'value',s=>{voteMyRight=s.val()?.eligible===true;voteUpdateLive()});
  if(isST)voteTickHandle=setInterval(voteSTTick,300);
+ // Reconcile UI even when another Firebase listener redraws the day/script screen.
+ voteSyncHandle=setInterval(voteSyncScreen,400);
 }
-function voteStopTimers(){if(voteTickHandle)clearInterval(voteTickHandle);voteTickHandle=null;voteRenderedId='';voteRenderedStage=''}
+function voteStopTimers(){if(voteSyncHandle)clearInterval(voteSyncHandle);voteSyncHandle=null;if(voteTickHandle)clearInterval(voteTickHandle);voteTickHandle=null;voteRenderedId='';voteRenderedStage=''}
+function voteSyncScreen(){
+ if(!room||!currentMeta||currentMeta.status==='ENDED'||currentMeta.phase!=='DAY')return;
+ if(voteIsActive()){
+  const screen=document.getElementById('voteScreen');
+  if(!screen||voteRenderedId!==voteCurrent.id||voteRenderedStage!==voteCurrent.stage){grimClearSurface();voteRender();}
+  else voteUpdateLive();
+ }else if(document.getElementById('voteScreen'))renderByPhase(currentMeta);
+}
 function voteSeatOrder(){const ps=grimPlayers();return ps.map((p,i)=>{const pos=grimPos(p.uid,i);return {uid:p.uid,name:p.name,x:pos.x,y:pos.y,angle:(Math.atan2(pos.x-.5,.5-pos.y)+Math.PI*2)%(Math.PI*2)}}).sort((a,b)=>a.angle-b.angle)}
 function voteDayHtml(){const hist=Object.values(voteHistory||{}).filter(v=>v.day===currentMeta?.dayNumber).sort((a,b)=>(a.finishedAt||0)-(b.finishedAt||0));return `<div class="card voteDayCard">${isST?'<button class="voteStartButton" onclick="voteSelectNominee()">🗳️ 처형 투표 시작</button><div class="voteTestPanel"><label><input type="checkbox" id="voteTestToggle" onchange="voteSetTestMode(this.checked)" '+(voteTestMode?'checked':'')+'> 🧪 더미 6명 포함 (끄면 실제 참가자만)</label><small>테스트 방 전용 · 실제 참가자 1~2명과 함께 투표 가능 · 해제하면 실제 참가자만 투표</small></div>':''}<h3>🗳️ 오늘의 투표 결과</h3>${hist.length?hist.map(v=>`<div class="voteHistoryRow"><b>${esc(v.nomineeName)}</b><strong>찬성 ${Number(v.count)||0}표</strong></div>`).join(''):'<p class="muted small">아직 진행한 투표가 없습니다.</p>'}</div>`}
 function voteRefreshDay(){if(currentMeta?.phase!=='DAY'||voteIsActive())return;const box=document.querySelector('.voteDayCard');if(box){box.outerHTML=voteDayHtml()} }
@@ -35,7 +45,7 @@ async function voteConfirmStart(startUid){if(!isST||voteIsActive())return;const 
 function votePhaseInfo(v){const elapsed=voteNow()-(v.startedAt||voteNow());const n=v.order?.length||0;if(elapsed<5000)return {preparing:true,index:-1,left:Math.ceil((5000-elapsed)/1000)};const idx=Math.min(n-1,Math.floor((elapsed-5000)/5000));return {preparing:false,index:idx,left:Math.max(0,Math.ceil((5000-(elapsed-5000-idx*5000))/1000))}}
 function voteClockHtml(v){const order=v.order||[],info=votePhaseInfo(v),current=info.index>=0?order[info.index]:null;return `<div class="voteClock" id="voteClock"><div class="voteClockFace"><div class="voteClockHand" id="voteClockHand"></div><div class="voteClockCenter" id="voteClockCenter">5<small>초</small></div>${order.map((p,i)=>{const angle=2*Math.PI*(i+1)/(order.length+1)-Math.PI/2;const x=50+42*Math.cos(angle),y=50+42*Math.sin(angle);return `<div class="voteClockName" id="voteSeat${i}" style="left:${x}%;top:${y}%">${esc(p.name)}</div>`}).join('')}</div><div class="voteCurrentName" id="voteCurrentName">준비 중</div></div>`}
 function voteRender(){if(!voteIsActive())return;const v=voteCurrent;const same=document.getElementById('voteScreen')&&voteRenderedId===v.id&&voteRenderedStage===v.stage;if(same){voteUpdateLive();return}voteRenderedId=v.id;voteRenderedStage=v.stage;voteUiKey='';
- h(`<div id="voteScreen" class="voteScreen">${isST?'<div class="voteEndTop"><button class="danger" onclick="endGame()">🔴 게임 종료</button></div>':''}<div class="voteHeading">🗳️ 처형 투표</div><div class="voteNominee">후보: <b>${esc(v.nomineeName)}</b></div>${voteClockHtml(v)}<div id="voteLive"></div></div>`);voteUpdateLive()}
+ h(`<div id="voteScreen" class="voteScreen">${isST?'<div class="voteEndTop"><button class="danger" onclick="endGame()">🔴 게임 종료</button></div>':''}<div class="voteHeading">🗳️ 처형 투표 <small class="voteBuild">RC5.8.7.18</small></div><div class="voteNominee">후보: <b>${esc(v.nomineeName)}</b></div>${voteClockHtml(v)}<div id="voteLive"></div></div>`);voteUpdateLive()}
 function voteUpdateLive(){if(!voteIsActive())return;const v=voteCurrent,el=document.getElementById('voteLive');if(!el)return;const votes=Object.keys(voteBallots||{}).filter(k=>voteBallots[k]===true);const names=(v.order||[]).filter(p=>votes.includes(p.uid)).map(p=>p.name);const count=names.length;
  votePaintSeats(v);if(v.stage==='RESULT'){const all=(v.order||[]).length+1,done=['ST',...(v.order||[]).map(p=>p.uid)].filter(k=>voteAcks[k]===true).length;const key=`result:${done}:${all}:${voteAcks[isST?'ST':uid]?'yes':'no'}`;if(key===voteUiKey)return;voteUiKey=key;el.innerHTML=`<p class="voteSummary">투표 종료 · 찬성 ${Number(v.count)||0}표 · 시계판에서 ✓ / ✕ 확인</p><button class="voteAgree" onclick="voteAcknowledge()" ${voteAcks[isST?'ST':uid]?'disabled':''}>${voteAcks[isST?'ST':uid]?'✓ 확인 완료 · 대기 중':'✓ 확인 완료'}</button><p class="voteAckCount">확인 ${done} / ${all}명</p>`;return}
  const info=votePhaseInfo(v),p=v.order?.[info.index],canVote=!isST&&p?.uid===uid&&voteMyRight&&!voteBallots[uid]&&info.left>0;
