@@ -4,11 +4,11 @@ let voteLocalYesId='',voteLocalYesPending=false,voteResultPollBusy=false,voteRes
 let voteBallotSyncBusy=false,voteBallotSyncAt=0,voteBallotSyncId='';
 let voteAckSubmitting=false,voteAckPendingKey='';
 let voteAckReconcileBusy=false,voteAckReconcileAt=0;
-let voteSyncHandle=null;let voteFirstWatchHandle=null;let voteFirstSeen=false;let voteFirstWatchBusy=false;let voteTickHandle=null,voteTickBusy=false,voteRenderedId='',voteRenderedStage='',voteSubmitting=false,voteUiKey='';
+let voteSyncHandle=null;let voteFirstWatchHandle=null;let voteFirstSeen=false;let voteFirstWatchBusy=false;let voteRepeatPollAt=0;let voteTickHandle=null,voteTickBusy=false,voteRenderedId='',voteRenderedStage='',voteSubmitting=false,voteUiKey='';
 function voteNow(){return Date.now()+(window._serverOffset||0)}
 function voteIsActive(){return !!(voteCurrent&&voteCurrent.stage&&voteCurrent.stage!=='CLOSED'&&currentMeta?.phase==='DAY')}
 function voteStartListeners(){
- voteCurrent=null;voteBallots={};voteAcks={};voteHistory={};voteMyRight=false;voteRenderedId='';voteRenderedStage='';voteFirstSeen=false;voteFirstWatchBusy=false;voteLocalYesId='';voteLocalYesPending=false;voteResultPollAt=0;voteBallotSyncAt=0;voteBallotSyncId='';voteAckSubmitting=false;voteAckPendingKey='';voteAckReconcileBusy=false;voteAckReconcileAt=0;
+ voteCurrent=null;voteBallots={};voteAcks={};voteHistory={};voteMyRight=false;voteRenderedId='';voteRenderedStage='';voteFirstSeen=false;voteFirstWatchBusy=false;voteRepeatPollAt=0;voteLocalYesId='';voteLocalYesPending=false;voteResultPollAt=0;voteBallotSyncAt=0;voteBallotSyncId='';voteAckSubmitting=false;voteAckPendingKey='';voteAckReconcileBusy=false;voteAckReconcileAt=0;
  listen(db.ref(`rooms/${room}/public/vote/current`),'value',s=>{const before=voteIsActive();voteCurrent=s.val();if(voteCurrent?.stage==='RUNNING'||voteCurrent?.stage==='RESULT')voteFirstSeen=true;if(currentMeta?.phase==='DAY'){if(voteIsActive()){grimClearSurface();voteRender();}else if(before||document.getElementById('voteScreen'))renderByPhase(currentMeta);else voteRefreshDay();} });
  listen(db.ref(`rooms/${room}/public/vote/ballots`),'value',s=>{voteBallots=s.val()||{};if(voteIsActive())voteUpdateLive()});
  listen(db.ref(`rooms/${room}/public/vote/acks`),'value',s=>{voteAcks=s.val()||{};if(voteAckPendingKey&&voteAcks[voteAckPendingKey]===true){voteAckSubmitting=false;voteAckPendingKey='';}if(voteIsActive())voteUpdateLive()});
@@ -17,14 +17,16 @@ function voteStartListeners(){
  if(isST)voteTickHandle=setInterval(voteSTTick,300);
  // Reconcile UI even when another Firebase listener redraws the day/script screen.
  voteSyncHandle=setInterval(voteSyncScreen,400);
- // Initial vote recovery: independent one-shot reads until the first live vote is observed.
- // Prevents a missed initial value event from requiring a manual page refresh.
- if(!isST)voteFirstWatchHandle=setInterval(voteRecoverFirstTransition,2000);
+ // Reconcile every nomination, not only the first vote of the session.
+ if(!isST)voteFirstWatchHandle=setInterval(voteRecoverFirstTransition,1200);
 }
 function voteStopTimers(){if(voteFirstWatchHandle)clearInterval(voteFirstWatchHandle);voteFirstWatchHandle=null;voteFirstWatchBusy=false;if(voteSyncHandle)clearInterval(voteSyncHandle);voteSyncHandle=null;if(voteTickHandle)clearInterval(voteTickHandle);voteTickHandle=null;voteRenderedId='';voteRenderedStage=''}
 async function voteRecoverFirstTransition(){
- if(voteFirstSeen){clearInterval(voteFirstWatchHandle);voteFirstWatchHandle=null;return;}
- if(voteFirstWatchBusy||!room||!currentMeta||currentMeta.status==='ENDED'||currentMeta.phase!=='DAY'||voteIsActive())return;
+ // Firebase listeners can miss a later nomination after a previous vote is closed.
+ // A fresh read is authoritative; do not stop watching after the first vote.
+ if(voteFirstWatchBusy||!room||!currentMeta||currentMeta.status==='ENDED'||currentMeta.phase!=='DAY')return;
+ if(Date.now()-voteRepeatPollAt<1100)return;
+ voteRepeatPollAt=Date.now();
  const watchRoom=room;
  voteFirstWatchBusy=true;
  try{
@@ -32,9 +34,14 @@ async function voteRecoverFirstTransition(){
   if(room!==watchRoom||!currentMeta||currentMeta.phase!=='DAY')return;
   const fresh=snap.val();
   if(fresh&&(fresh.stage==='RUNNING'||fresh.stage==='RESULT')){
-   voteCurrent=fresh;voteFirstSeen=true;grimClearSurface();voteRender();
+   if(!voteCurrent||voteCurrent.id!==fresh.id||voteCurrent.stage!==fresh.stage||!document.getElementById('voteScreen')){
+    voteCurrent=fresh;grimClearSurface();voteRender();
+   }
+  }else if(voteCurrent){
+   voteCurrent=null;voteRenderedId='';voteRenderedStage='';
+   if(document.getElementById('voteScreen'))renderByPhase(currentMeta);
   }
- }catch(e){console.warn('first vote recovery',e)}finally{voteFirstWatchBusy=false}
+ }catch(e){console.warn('repeat vote recovery',e)}finally{voteFirstWatchBusy=false}
 }
 function voteSyncScreen(){
  if(!room||!currentMeta||currentMeta.status==='ENDED'||currentMeta.phase!=='DAY')return;
@@ -110,15 +117,19 @@ function voteMixedSeats(){
  const dummy=voteTestMode&&currentMeta?.testVoteRoom?Array.from({length:6},(_,i)=>({uid:'TEST_DUMMY_'+i,name:'테스트 '+(i+1)})):[];
  return [...real,...dummy];
 }
-function voteSelectNominee(){if(!isST||currentMeta?.phase!=='DAY'||voteIsActive())return;const ps=voteMixedPlayers();if(!ps.length)return toast('참가자가 없습니다.');openPicker('처형 후보 선택',ps.map(p=>`<button class="pickerItem" onclick="voteSelectStarter('${esc(p.uid)}')">${esc(p.name)}</button>`).join(''))}
+function voteAlreadyNominated(p,hist=voteHistory){return Object.values(hist||{}).some(v=>v&&Number(v.day)===Number(currentMeta?.dayNumber)&&(v.nomineeUid?v.nomineeUid===p.uid:v.nomineeName===p.name))}
+function voteSelectNominee(){if(!isST||currentMeta?.phase!=='DAY'||voteIsActive())return;const ps=voteMixedPlayers().filter(p=>!voteAlreadyNominated(p));if(!ps.length)return toast('오늘 지명 가능한 참가자가 없습니다.');openPicker('처형 후보 선택',ps.map(p=>`<button class="pickerItem" onclick="voteSelectStarter('${esc(p.uid)}')">${esc(p.name)}</button>`).join(''))}
+
 let voteNomineeUid='';
-function voteSelectStarter(nomineeUid){voteNomineeUid=nomineeUid;const ps=voteMixedPlayers(),nom=ps.find(p=>p.uid===nomineeUid);if(!nom)return;openPicker(`${nom.name} 후보 · 시작 위치 선택`,voteMixedSeats().map(p=>`<button class="pickerItem" onclick="voteConfirmStart('${esc(p.uid)}')">${esc(p.name)}부터 시계방향</button>`).join(''))}
-async function voteConfirmStart(startUid){if(!isST||voteIsActive())return;const seats=voteMixedSeats(),nom=seats.find(p=>p.uid===voteNomineeUid)||voteMixedPlayers().find(p=>p.uid===voteNomineeUid);if(!nom||!seats.length)return;const ix=seats.findIndex(p=>p.uid===startUid);if(ix<0)return;const order=[...seats.slice(ix),...seats.slice(0,ix)];if(!confirm(`${nom.name} 후보에 대한 투표를 시작할까요?\n${order[0].name}부터 시계방향으로 진행합니다.\n준비 5초 + 참가자별 5초`))return;
- closePicker();try{const cur=(await db.ref(`rooms/${room}/public/vote/current`).once('value')).val();if(cur&&cur.stage!=='CLOSED')return toast('진행 중인 투표가 있습니다.');const rights={};seats.forEach(p=>{const state=(typeof grimState!=='undefined'?grimState[p.uid]:null)||{};rights[p.uid]=(currentMeta?.testVoteRoom===true)||!state.dead||!state.ghostSpent});const id='v'+Date.now();const updates={'public/vote/ballots':null,'public/vote/acks':null};order.forEach((p,i)=>updates[`private/playerVoteRights/${p.uid}`]={eligible:rights[p.uid],index:i});updates['public/vote/current']={id,day:currentMeta.dayNumber,nomineeUid:nom.uid,nomineeName:nom.name,order,testMode:!!(voteTestMode&&currentMeta?.testVoteRoom),stage:'RUNNING',startedAt:firebase.database.ServerValue.TIMESTAMP};await db.ref(`rooms/${room}`).update(updates)}catch(e){toast('투표 시작 실패: '+e.message)}}
+function voteSelectStarter(nomineeUid){voteNomineeUid=nomineeUid;const ps=voteMixedPlayers(),nom=ps.find(p=>p.uid===nomineeUid);if(!nom)return;if(voteAlreadyNominated(nom))return toast('이미 오늘 지명된 참가자입니다.');openPicker(`${nom.name} 후보 · 시작 위치 선택`,voteMixedSeats().map(p=>`<button class="pickerItem" onclick="voteConfirmStart('${esc(p.uid)}')">${esc(p.name)}부터 시계방향</button>`).join(''))}
+async function voteConfirmStart(startUid){if(!isST||voteIsActive())return;const seats=voteMixedSeats(),nom=seats.find(p=>p.uid===voteNomineeUid)||voteMixedPlayers().find(p=>p.uid===voteNomineeUid);if(!nom||!seats.length)return;if(voteAlreadyNominated(nom))return toast('이미 오늘 지명된 참가자입니다.');const ix=seats.findIndex(p=>p.uid===startUid);if(ix<0)return;const order=[...seats.slice(ix),...seats.slice(0,ix)];if(!confirm(`${nom.name} 후보에 대한 투표를 시작할까요?\n${order[0].name}부터 시계방향으로 진행합니다.\n준비 5초 + 참가자별 5초`))return;
+ closePicker();try{const [curSnap,histSnap]=await Promise.all([db.ref(`rooms/${room}/public/vote/current`).once('value'),db.ref(`rooms/${room}/public/vote/history`).once('value')]);
+ const cur=curSnap.val();if(cur&&cur.stage!=='CLOSED')return toast('진행 중인 투표가 있습니다.');
+ if(voteAlreadyNominated(nom,histSnap.val()||{}))return toast('이미 오늘 지명된 참가자입니다.');const rights={};seats.forEach(p=>{const state=(typeof grimState!=='undefined'?grimState[p.uid]:null)||{};rights[p.uid]=(currentMeta?.testVoteRoom===true)||!state.dead||!state.ghostSpent});const id='v'+Date.now();const updates={'public/vote/ballots':null,'public/vote/acks':null};order.forEach((p,i)=>updates[`private/playerVoteRights/${p.uid}`]={eligible:rights[p.uid],index:i});updates['public/vote/current']={id,day:currentMeta.dayNumber,nomineeUid:nom.uid,nomineeName:nom.name,order,testMode:!!(voteTestMode&&currentMeta?.testVoteRoom),stage:'RUNNING',startedAt:firebase.database.ServerValue.TIMESTAMP};await db.ref(`rooms/${room}`).update(updates)}catch(e){toast('투표 시작 실패: '+e.message)}}
 function votePhaseInfo(v){const elapsed=voteNow()-(v.startedAt||voteNow());const n=v.order?.length||0;if(elapsed<5000)return {preparing:true,index:-1,left:Math.ceil((5000-elapsed)/1000)};const idx=Math.min(n-1,Math.floor((elapsed-5000)/5000));return {preparing:false,index:idx,left:Math.max(0,Math.ceil((5000-(elapsed-5000-idx*5000))/1000))}}
 function voteClockHtml(v){const order=v.order||[],info=votePhaseInfo(v),current=info.index>=0?order[info.index]:null;return `<div class="voteClock" id="voteClock"><div class="voteClockFace"><div class="voteClockHand" id="voteClockHand"></div><div class="voteClockCenter" id="voteClockCenter">5<small>초</small></div>${order.map((p,i)=>{const angle=2*Math.PI*(i+1)/(order.length+1)-Math.PI/2;const x=50+42*Math.cos(angle),y=50+42*Math.sin(angle);return `<div class="voteClockName" id="voteSeat${i}" style="left:${x}%;top:${y}%">${esc(p.name)}</div>`}).join('')}</div><div class="voteCurrentName" id="voteCurrentName">준비 중</div></div>`}
 function voteRender(){if(!voteIsActive())return;const v=voteCurrent;const same=document.getElementById('voteScreen')&&voteRenderedId===v.id&&voteRenderedStage===v.stage;if(same){voteUpdateLive();return}voteRenderedId=v.id;voteRenderedStage=v.stage;voteUiKey='';
- h(`<div id="voteScreen" class="voteScreen">${isST?'<div class="voteEndTop"><button class="danger" onclick="endGame()">🔴 게임 종료</button></div>':''}<div class="voteHeading">🗳️ 처형 투표 <small class="voteBuild">RC5.8.7.24</small></div><div class="voteNominee">후보: <b>${esc(v.nomineeName)}</b></div>${voteClockHtml(v)}<div id="voteLive"></div></div>`);voteUpdateLive()}
+ h(`<div id="voteScreen" class="voteScreen">${isST?'<div class="voteEndTop"><button class="danger" onclick="endGame()">🔴 게임 종료</button></div>':''}<div class="voteHeading">🗳️ 처형 투표 <small class="voteBuild">RC5.8.7.25</small></div><div class="voteNominee">후보: <b>${esc(v.nomineeName)}</b></div>${voteClockHtml(v)}<div id="voteLive"></div></div>`);voteUpdateLive()}
 function voteUpdateLive(){if(!voteIsActive())return;const v=voteCurrent,el=document.getElementById('voteLive');if(!el)return;if(v.stage==='RESULT'&&v.finalBallots)voteBallots=v.finalBallots;const localYes=!isST&&voteLocalYesId===v.id;const votes=Object.keys(voteBallots||{}).filter(k=>voteBallots[k]===true);const names=(v.order||[]).filter(p=>votes.includes(p.uid)).map(p=>p.name);const count=names.length;
  votePaintSeats(v);if(v.stage==='RESULT'){voteReconcileBallots();const all=(v.order||[]).length+1,done=['ST',...(v.order||[]).map(p=>p.uid)].filter(k=>voteAcks[k]===true).length;const ackKey=isST?'ST':uid;const waiting=voteAckSubmitting&&voteAckPendingKey===ackKey;const key=`result:${done}:${all}:${voteAcks[ackKey]?'yes':'no'}:${waiting}`;if(key===voteUiKey)return;voteUiKey=key;el.innerHTML=`<p class="voteSummary">투표 종료 · 찬성 ${Number(v.count)||0}표 · 시계판에서 ✓ / ✕ 확인</p><button class="voteAgree" onclick="voteAcknowledge()" ${voteAcks[ackKey]||waiting?'disabled':''}>${voteAcks[ackKey]?'✓ 확인 완료 · 대기 중':waiting?'✓ 확인 전송 중':'✓ 확인 완료'}</button><p class="voteAckCount">확인 ${done} / ${all}명</p>`;return}
  const info=votePhaseInfo(v),p=v.order?.[info.index],canVote=!isST&&p?.uid===uid&&voteMyRight&&!voteBallots[uid]&&!localYes&&info.left>0;
@@ -165,7 +176,7 @@ async function voteAcknowledge(){
   else toast('확인 전송 실패: '+e.message);
  }finally{voteAckSubmitting=false;voteAckPendingKey='';voteUiKey='';voteUpdateLive()}
 }
-async function voteSTTick(){if(!isST||voteTickBusy||!voteIsActive())return;voteTickBusy=true;try{const v=voteCurrent;if(v.stage==='RUNNING'){if(v.testMode){const info=votePhaseInfo(v);if(!info.preparing&&info.index>=0){for(let i=0;i<=info.index;i++){const p=v.order[i];if(p?.uid.startsWith('TEST_DUMMY_')&&Number(p.uid.split('_').pop())%2===0&&!voteBallots[p.uid])await db.ref(`rooms/${room}/public/vote/ballots/${p.uid}`).set(true);}}}if(voteNow()>=v.startedAt+5000+v.order.length*5000){const snap=await db.ref(`rooms/${room}/public/vote/ballots`).once('value');const votes=snap.val()||{};const count=v.order.filter(p=>votes[p.uid]===true).length;if(v.testMode){const updates={};v.order.filter(p=>p.uid.startsWith('TEST_DUMMY_')).forEach(p=>updates[p.uid]=true);await db.ref(`rooms/${room}/public/vote/acks`).update(updates);}await db.ref(`rooms/${room}/public/vote/current`).update({stage:'RESULT',count,finalBallots:v.order.reduce((out,p)=>{if(votes[p.uid]===true)out[p.uid]=true;return out},{}),finishedAt:firebase.database.ServerValue.TIMESTAMP})}else voteUpdateLive()}else if(v.stage==='RESULT'){const ack=voteAcks||{};if(ack.ST&&v.order.every(p=>ack[p.uid])){const root=db.ref(`rooms/${room}`);await root.update({[`public/vote/history/${v.id}`]:{day:v.day,nomineeName:v.nomineeName,count:v.count,finishedAt:firebase.database.ServerValue.TIMESTAMP},'public/vote/current':null,'public/vote/ballots':null,'public/vote/acks':null})}}}catch(e){console.error('vote tick',e);const el=document.getElementById('voteLive');if(el&&voteCurrent?.stage==='RUNNING'&&voteNow()>=Number(voteCurrent.startedAt||0)+5000+(voteCurrent.order?.length||0)*5000)(el.querySelector('.voteError')||el.appendChild(document.createElement('p'))).textContent='투표 종료 처리 실패: '+String(e.message||e)}finally{voteTickBusy=false}}
+async function voteSTTick(){if(!isST||voteTickBusy||!voteIsActive())return;voteTickBusy=true;try{const v=voteCurrent;if(v.stage==='RUNNING'){if(v.testMode){const info=votePhaseInfo(v);if(!info.preparing&&info.index>=0){for(let i=0;i<=info.index;i++){const p=v.order[i];if(p?.uid.startsWith('TEST_DUMMY_')&&Number(p.uid.split('_').pop())%2===0&&!voteBallots[p.uid])await db.ref(`rooms/${room}/public/vote/ballots/${p.uid}`).set(true);}}}if(voteNow()>=v.startedAt+5000+v.order.length*5000){const snap=await db.ref(`rooms/${room}/public/vote/ballots`).once('value');const votes=snap.val()||{};const count=v.order.filter(p=>votes[p.uid]===true).length;if(v.testMode){const updates={};v.order.filter(p=>p.uid.startsWith('TEST_DUMMY_')).forEach(p=>updates[p.uid]=true);await db.ref(`rooms/${room}/public/vote/acks`).update(updates);}await db.ref(`rooms/${room}/public/vote/current`).update({stage:'RESULT',count,finalBallots:v.order.reduce((out,p)=>{if(votes[p.uid]===true)out[p.uid]=true;return out},{}),finishedAt:firebase.database.ServerValue.TIMESTAMP})}else voteUpdateLive()}else if(v.stage==='RESULT'){const ack=voteAcks||{};if(ack.ST&&v.order.every(p=>ack[p.uid])){const root=db.ref(`rooms/${room}`);await root.update({[`public/vote/history/${v.id}`]:{day:v.day,nomineeUid:v.nomineeUid,nomineeName:v.nomineeName,count:v.count,finishedAt:firebase.database.ServerValue.TIMESTAMP},'public/vote/current':null,'public/vote/ballots':null,'public/vote/acks':null})}}}catch(e){console.error('vote tick',e);const el=document.getElementById('voteLive');if(el&&voteCurrent?.stage==='RUNNING'&&voteNow()>=Number(voteCurrent.startedAt||0)+5000+(voteCurrent.order?.length||0)*5000)(el.querySelector('.voteError')||el.appendChild(document.createElement('p'))).textContent='투표 종료 처리 실패: '+String(e.message||e)}finally{voteTickBusy=false}}
 setInterval(()=>{if(voteIsActive()&&voteCurrent.stage==='RUNNING')voteUpdateLive()},180);
 Object.assign(window,{voteSetTestMode,voteSelectNominee,voteSelectStarter,voteConfirmStart,voteYes,voteAcknowledge});
 
