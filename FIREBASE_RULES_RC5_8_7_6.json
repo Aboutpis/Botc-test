@@ -1,0 +1,108 @@
+{
+  "rules": {
+    "rooms": {
+      "$room": {
+        "public": {
+          "meta": {
+            ".read": "auth != null && data.exists() && (data.child('status').val() != 'ENDED' || data.child('ownerUid').val() == auth.uid || root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists())",
+            ".write": "auth != null && ((!data.exists() && newData.child('ownerUid').val() == auth.uid) || (data.exists() && data.child('ownerUid').val() == auth.uid && newData.child('ownerUid').val() == auth.uid))"
+          },
+          "script": {
+            ".read": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists()))",
+            ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+          },
+          "players": {
+            ".read": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists()))",
+            "$uid": {
+              ".read": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || ($uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED'))",
+              ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (auth != null && $uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() == 'WAITING' && newData.child('uid').val() == auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 20)",
+              "online": {
+                ".write": "auth != null && $uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('players').child($uid).exists()",
+                ".validate": "newData.isBoolean()"
+              }
+            }
+          },
+          "reconnectRequests": {
+            ".read": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid",
+            "$uid": {
+              ".write": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || ($uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() == 'PLAYING' && root.child('rooms').child($room).child('public').child('meta').child('reconnectAllowedUid').val() == newData.child('oldUid').val() && root.child('rooms').child($room).child('public').child('meta').child('reconnectAllowedName').val() == newData.child('name').val() && newData.child('uid').val() == auth.uid))"
+            }
+          },
+          "drawClaims": {
+            ".read": "auth != null && (auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists()))",
+            "$token": {
+              ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (auth != null && root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('meta').child('phase').val() == 'PREPARING' && root.child('rooms').child($room).child('public').child('meta').child('setupMode').val() == 'draw' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists() && !data.exists() && newData.child('uid').val() == auth.uid && newData.child('claimedAt').exists()) && root.child('rooms').child($room).child('public').child('meta').child('drawQueue').child('0').val() == auth.uid && now < root.child('rooms').child($room).child('public').child('meta').child('drawTurnStartedAt').val() + 20000"
+            },
+            ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+          },
+          "drawTokens": {
+            ".read": "auth != null && (auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists()))",
+            ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+          },
+          "roleConfirmations": {
+            ".read": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists()))",
+            ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid",
+            "$uid": {
+              ".write": "auth != null && $uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('phase').val() == 'PREPARING' && root.child('rooms').child($room).child('public').child('meta').child('setupStage').val() == 'DISTRIBUTING' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists() && root.child('rooms').child($room).child('private').child('playerRoles').child(auth.uid).exists() && newData.val() == true",
+              ".validate": "newData.isBoolean()"
+            }
+          },
+          "vote": {
+            ".read": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (auth != null && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists() && root.child('rooms').child($room).child('public').child('meta').child('status').val() == 'PLAYING')",
+            "current": {
+              ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+            },
+            "history": {
+              ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+            },
+            "ballots": {
+              ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid",
+              "$uid": {
+                ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (auth != null && $uid == auth.uid && auth != null && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists() && root.child('rooms').child($room).child('public').child('meta').child('phase').val() == 'DAY' && root.child('rooms').child($room).child('public').child('vote').child('current').child('stage').val() == 'RUNNING' && root.child('rooms').child($room).child('private').child('playerVoteRights').child(auth.uid).child('eligible').val() == true && !data.exists() && newData.val() == true && now >= (root.child('rooms').child($room).child('public').child('vote').child('current').child('startedAt').val() + 5000 + root.child('rooms').child($room).child('private').child('playerVoteRights').child(auth.uid).child('index').val() * 5000) && now < (root.child('rooms').child($room).child('public').child('vote').child('current').child('startedAt').val() + 5000 + root.child('rooms').child($room).child('private').child('playerVoteRights').child(auth.uid).child('index').val() * 5000) + 5000)"
+              }
+            },
+            "acks": {
+              ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid",
+              "$uid": {
+                ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (auth != null && $uid == auth.uid && auth != null && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists() && root.child('rooms').child($room).child('public').child('meta').child('phase').val() == 'DAY' && root.child('rooms').child($room).child('public').child('vote').child('current').child('stage').val() == 'RESULT' && !data.exists() && newData.val() == true)"
+              }
+            }
+          }
+        },
+        "private": {
+          "st": {
+            ".read": "auth != null && data.child('ownerUid').val() == auth.uid",
+            ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+          },
+          "playerPrompts": {
+            "$uid": {
+              ".read": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || ($uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED'))",
+              ".write": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || ($uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && !newData.exists()))"
+            }
+          },
+          "responses": {
+            ".read": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid",
+            "$round": {
+              "$uid": {
+                ".write": "auth != null && (root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || ($uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() == 'PLAYING' && root.child('rooms').child($room).child('public').child('meta').child('phase').val() == 'NIGHT' && root.child('rooms').child($room).child('public').child('meta').child('roundClosed').val() != true && $round == root.child('rooms').child($room).child('public').child('meta').child('currentRound').val() + '' && !data.exists() && newData.child('uid').val() == auth.uid))"
+              }
+            }
+          },
+          "playerRoles": {
+            "$uid": {
+              ".read": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (auth != null && $uid == auth.uid && root.child('rooms').child($room).child('public').child('meta').child('status').val() != 'ENDED' && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists())",
+              ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+            },
+            ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid"
+          },
+          "playerVoteRights": {
+            ".write": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid",
+            "$uid": {
+              ".read": "auth != null && root.child('rooms').child($room).child('public').child('meta').child('ownerUid').val() == auth.uid || (auth != null && $uid == auth.uid && auth != null && root.child('rooms').child($room).child('public').child('players').child(auth.uid).exists())"
+            }
+          }
+        }
+      }
+    }
+  }
+}

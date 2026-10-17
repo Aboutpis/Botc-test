@@ -1,0 +1,1 @@
+RC5.8.7.8 test: In a DAY game, ST can turn on dummy voting. Six test seats vote automatically (alternating yes/no), and dummy confirmations are automatic. ST must press confirm. This does not test real player synchronization. Existing Firebase rules are used. Test with real devices before production.
