@@ -184,38 +184,35 @@ body:has(#roomEscapeBar:not([hidden])) #app{padding-bottom:65px}
 /* RC5.8.7.18: version visible on both voting screens for cross-device cache diagnosis. */
 .voteBuild{font-size:10px;font-weight:400;color:#a6a4b1;opacity:.65;white-space:nowrap;}
 
-/* RC5.8.7.28 — Gothic legibility-first visual theme. No game-state changes. */
-:root{color-scheme:dark;--card:#1b1920;--line:#67523d;--muted:#c8c1b9;--accent:#8f2635;--danger:#a72c3a;--ok:#64d5a0;--gold:#f1d28f;--ink:#f9f5ef}
-body{color:var(--ink);background:radial-gradient(ellipse at 50% -20%,#3a1b29 0%,#17151c 45%,#0c1018 100%);font-size:15px;line-height:1.55}
-.brand,.phase{color:#f7e3b8;letter-spacing:.015em;text-shadow:0 2px 12px #0008}
-.card{background:linear-gradient(145deg,rgba(36,28,34,.98),rgba(22,23,30,.98));border:1px solid #765b44;box-shadow:0 8px 22px #0006,inset 0 1px #ffffff10}
-button{background:linear-gradient(180deg,#a33344,#762332);border:1px solid #cb7780;color:#fffaf4;min-height:44px;font-size:14px;text-shadow:0 1px 2px #0008}
-button.secondary{background:linear-gradient(180deg,#343745,#222630);border-color:#6e7484;color:#f7f7fa}
-button.danger{background:#9b2c37;border-color:#d36c76}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #ffe2a2;outline-offset:2px}
-input,textarea,select{background:#151820;color:#fff9f0;border:1px solid #8a7866;min-height:42px;font-size:15px}
-label,.muted,.roleText,.grimTokenTitle{color:#d0c6b8}
-.person,.composePerson,.statusChip,.nightItem,.grimEditor,.notice,.answer,.prompt{background:#1d2029;border-color:#655849;color:#f5f0e8}
-.person b,.composeHead b,.statusTop b{color:#fff8ed}
-.pill{background:#34313b;color:#f6e7d1;border:1px solid #645645}
-.code{color:#ffdfa0;text-shadow:0 0 15px #b77b3150}
-.homeScene{border-color:#936c49;background:radial-gradient(circle at 72% 20%,#693044 0%,#291925 40%,#10141e 90%)}
-.homeScene button{font-size:16px;min-height:50px}
-.homeTitle h1{color:#fff0d2;text-shadow:0 3px 18px #000}
-.grimBoard{border:3px solid #bc955a;background:radial-gradient(ellipse at center,#5e4a34,#34281f 65%,#211c1b 100%);box-shadow:inset 0 0 70px #000a,0 0 0 1px #171414}
-.grimCircle{border-color:#e6bd74;background:#171820;box-shadow:0 0 0 2px #221a16,0 3px 10px #0009}
-.grimPlayerName{color:#fff;font-size:13px;font-weight:900;text-shadow:0 2px 5px #000,0 0 5px #000}
-.grimRoleName{color:#f5d8a4;font-size:11px;text-shadow:0 1px 4px #000}
-.grimBadges span{background:#151820f2;border-color:#d1b27b;color:#fff;font-size:10px}
-#grimOverlay,#grimSplitDock{background:#181923}
-.grimHead{color:#ffe4af}
-.voteClockFace{border:6px double #e8bf76;background:repeating-conic-gradient(from 0deg,#d5a54e30 0deg 1deg,transparent 1deg 30deg),radial-gradient(circle,#28394b 0%,#172334 55%,#101521 76%);box-shadow:0 0 0 4px #473321,0 0 25px #000b,inset 0 0 0 7px #b58a4755,inset 0 0 40px #000b}
-.voteClockFace:before{content:'';position:absolute;inset:5%;border:2px solid #c79a52a0;border-radius:50%;pointer-events:none}
-.voteClockHand{background:linear-gradient(#ff7770,#d8a04e);box-shadow:0 0 9px #e9574ca0}
-.voteClockCenter{width:72px;height:72px;background:#151b29;border:3px solid #f4d38b;color:white;box-shadow:0 0 0 4px #10131b,0 2px 14px #000}
-.voteClockCenter small{color:#f4d38b}
-.voteClockName{background:#202a39;border:2px solid #c49b63;color:#fff;font-size:clamp(12px,3vw,17px);text-shadow:0 1px 3px #000}
-.voteClockName.voteClockActive{background:#814d21;border-color:#ffe49e;box-shadow:0 0 0 2px #1c1711,0 0 17px #e9b04f}
-@media(min-width:1000px) and (orientation:landscape){.grimPlayerName{font-size:14px}.grimRoleName{font-size:12px}.grimBadges span{font-size:11px}.nightItem{font-size:14px}}
-@media(max-width:420px){.voteClockCenter{width:58px;height:58px}.voteClockName{font-size:12px}.card{padding:12px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important}}
+
+/* RC5.8.7.29: illustrated gothic redesign. Visuals only; game logic untouched. */
+:root{--card:#1b1820;--line:#795c43;--muted:#c8bdaf;--accent:#8f3c48;--danger:#a13c46;--ok:#2b7959;color:#f8f0e5;background:#100e14}
+body{background:radial-gradient(ellipse at 50% 0%,#39202d 0%,#15121a 55%,#0a0c11 100%);color:#f8f0e5}
+.card{background:linear-gradient(145deg,rgba(44,30,37,.97),rgba(20,21,29,.97));border:1px solid #86674c;box-shadow:inset 0 0 0 1px #c4a36a22,0 10px 25px #0007;border-radius:12px}
+.card h2,.card h3,.phase,.brand{color:#f2d7a4;text-shadow:0 2px 6px #000}
+button{background:linear-gradient(180deg,#a05256,#612a39);border:1px solid #d2a36c;color:#fff6e9;box-shadow:inset 0 1px #ffffff24,0 3px 9px #0005;min-height:42px}
+button.secondary{background:linear-gradient(180deg,#404052,#222633);border-color:#88765d;color:#fff4df}
+button.danger{background:linear-gradient(180deg,#963e49,#57212e);border-color:#cb8b83}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f5d88e;outline-offset:2px}
+input,select,textarea{background:#151720;border:1px solid #937753;color:#fff9f0}
+.person,.notice,.pill{background:#25212a;border-color:#745a48;color:#f4eadd}
+.muted,label{color:#d4c4b7}
+.homeScene{background:#15121c url('assets/gothic-tower.svg') center 33%/cover no-repeat;border:3px double #c6a06c;border-radius:16px;box-shadow:0 0 0 4px #211722,0 20px 55px #000b;min-height:min(800px,calc(100dvh - 25px))}
+.homeScene:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#09091405 12%,#09091322 36%,#0b0c15cc 64%,#08090ff7 100%);pointer-events:none;z-index:0}
+.homeSky{display:none!important}.homeTitle,.homeActions,.homeFoot{z-index:1}
+.homeTitle h1{font-family:Georgia,'Noto Serif KR',serif;color:#f9e2b4;font-size:clamp(27px,7.5vw,40px);text-shadow:0 3px 3px #000,0 0 16px #000}
+.homeEyebrow{color:#f1c88d;letter-spacing:2px}.homeTitle p{color:#f3e5d9;font-weight:600;text-shadow:0 2px 5px #000}
+.homeActions button{background:linear-gradient(180deg,#9b4c52,#572a39);border:2px solid #d1aa73;box-shadow:inset 0 0 0 2px #5c3540,0 5px 18px #0009;font-size:16px}
+.homeActions button.secondary{background:linear-gradient(180deg,#3f414e,#1e2531);border-color:#bca67e}
+.homeFoot{color:#e2c7a9}
+.grimoireCard{background:#cfb991 url('assets/grimoire-parchment.svg') center/cover;color:#302318;border:2px solid #b38c4d}
+.grimBoard{background-image:linear-gradient(#130f0b20,#130f0b20),url('assets/grimoire-parchment.svg')!important;background-size:cover!important;background-position:center!important;border-color:#c7a46c!important}
+.voteClockFace{background:#0b1424 url('assets/stained-clock.svg') center/100% 100% no-repeat!important;border:5px solid #c7a166!important;box-shadow:0 0 0 3px #332738,0 0 24px #000a,inset 0 0 22px #0009!important}
+.voteClockCenter{background:#172338;border:3px solid #e4bf7d;color:#fff;box-shadow:0 0 0 3px #1c1824,0 2px 12px #000c}
+.voteClockName{background:#1b2838;border:2px solid #d1a96b;color:#fff;box-shadow:0 2px 10px #000c;text-shadow:0 1px 2px #000}
+.voteClockName.voteClockActive{background:#754321;border-color:#ffdf8d;box-shadow:0 0 16px #f2b84f}
+.voteClockHand{background:linear-gradient(90deg,#ffad8d,#d33b4a,#ffab85);box-shadow:0 0 9px #ed5c5c}
+.voteLiveVotes{background:#1a1e2b;border-color:#b49266}
+.voteAgree,.voteStartButton{background:linear-gradient(180deg,#357f60,#18503c);border:2px solid #9cd5ac;color:white}
+.voteHeading,.voteCurrentName{color:#f9dba5}
+@media(prefers-reduced-motion:reduce){button{transition:none!important}}
