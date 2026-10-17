@@ -314,8 +314,10 @@ async function endGame(){
   ]);
   const players=Object.values(playersSnap.val()||{}).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
   const assignments=assignSnap.val()||{};
-  if(players.some(p=>!assignments[p.uid]?.real))return toast('실제 역할을 확인할 수 없는 참가자가 있습니다. 게임 종료를 중단했습니다.');
-  const roleReveal=players.map(p=>({name:p.name,role:assignments[p.uid].real}));
+  // Vote-only test rooms intentionally skip role assignment. Never block ending such a room.
+  // Normal games still require a genuine recorded role for every participant.
+  if(!currentMeta?.testVoteRoom&&players.some(p=>!assignments[p.uid]?.real))return toast('실제 역할을 확인할 수 없는 참가자가 있습니다. 게임 종료를 중단했습니다.');
+  const roleReveal=players.map(p=>({name:p.name,role:assignments[p.uid]?.real||'역할 미배분 (투표 테스트)'}));
   // 공개 데이터와 종료 상태를 같은 update로 기록하여 참가자에게 동시에 보입니다.
   await db.ref(`rooms/${room}/public/meta`).update({roleReveal,status:'ENDED',endedAt:firebase.database.ServerValue.TIMESTAMP});
  }catch(e){toast('게임 종료 처리 실패: '+(e.message||e))}

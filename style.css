@@ -175,3 +175,8 @@ body:has(#roomEscapeBar:not([hidden])) #app{padding-bottom:65px}
 
 /* RC5.8.7.15: unobtrusive version label at page bottom, never floating. */
 #appVersion{position:static!important;display:block!important;width:max-content;margin:12px auto 16px!important;padding:0!important;background:transparent!important;box-shadow:none!important;border:0!important;color:#888!important;opacity:.45!important;font-size:10px!important;pointer-events:none!important;}
+
+/* RC5.8.7.16: keep the player exit and script back button visibly separated. */
+.playerExitTop{margin-bottom:24px!important;}
+.playerExitTop+.top{margin-top:6px;}
+@media(max-width:520px){.playerExitTop{margin-bottom:28px!important;}}
