@@ -192,7 +192,27 @@ async function restartPreparationFromLobby(){
   leaveRoomToHome();
  }catch(e){toast('처음부터 다시 시작 실패: '+e.message);}
 }
-async function finishRoleSetup(){if(!isST)return;const players=Object.values(window._players||{});if(players.some(p=>!window._assignments?.[p.uid]))return toast('아직 역할이 배분되지 않은 참가자가 있습니다.');const unchecked=players.filter(p=>window._roleConfirmations?.[p.uid]!==true);if(!confirm(unchecked.length?`아직 ${unchecked.length}명이 캐릭터 확인을 완료하지 않았습니다.\n그래도 첫 번째 밤을 시작할까요?`:'모든 참가자가 확인했습니다. 첫 번째 밤을 시작할까요?'))return;const roles={};for(const p of players)roles[p.uid]=window._assignments[p.uid].real;await db.ref(`rooms/${room}`).update({'private/st/roles':roles,'public/meta/status':'PLAYING','public/meta/phase':'NIGHT','public/meta/nightNumber':1,'public/meta/dayNumber':0,'public/meta/currentRound':0,'public/meta/nightRound':0,'public/meta/roundClosed':false,'public/meta/startedAt':firebase.database.ServerValue.TIMESTAMP});}
+async function finishRoleSetup(){
+ if(!isST)return;
+ const players=Object.values(window._players||{});
+ if(players.some(p=>!window._assignments?.[p.uid]))return toast('아직 역할이 배분되지 않은 참가자가 있습니다.');
+ const unchecked=players.filter(p=>window._roleConfirmations?.[p.uid]!==true);
+ if(!confirm(unchecked.length?`아직 ${unchecked.length}명이 캐릭터 확인을 완료하지 않았습니다.\n그래도 첫 번째 밤을 시작할까요?`:'모든 참가자가 확인했습니다. 첫 번째 밤을 시작할까요?'))return;
+ const roles={};for(const p of players)roles[p.uid]=window._assignments[p.uid].real;
+ const updates={'private/st/roles':roles,'public/meta/status':'PLAYING','public/meta/phase':'NIGHT','public/meta/nightNumber':1,'public/meta/dayNumber':0,'public/meta/currentRound':0,'public/meta/nightRound':0,'public/meta/roundClosed':false,'public/meta/startedAt':firebase.database.ServerValue.TIMESTAMP};
+ // RC28: seed the shown role into the existing editable, ST-only character reminders.
+ const shownPlayers=players.filter(p=>{const a=window._assignments[p.uid];return typeof a.shown==='string'&&a.shown.trim()&&a.shown!==a.real;});
+ try{
+  if(shownPlayers.length){
+   const saved=(await db.ref(`rooms/${room}/private/st/grimoireState`).once('value')).val()||{};
+   for(const p of shownPlayers){
+    const shown=window._assignments[p.uid].shown,existing=saved[p.uid]?.extraRoles;
+    updates[`private/st/grimoireState/${p.uid}/extraRoles`]=[shown,...(Array.isArray(existing)?existing:[]).filter(r=>r!==shown)];
+   }
+  }
+  await db.ref(`rooms/${room}`).update(updates);
+ }catch(e){toast('첫 번째 밤 시작 실패: '+e.message);}
+}
 
 async function allowReconnect(oldUid,name){if(!confirm(`${name} 참가자의 재접속을 허용할까요?\n참가자는 방 코드와 같은 이름으로 다시 입장하면 됩니다.`))return;await db.ref(`rooms/${room}/public/meta`).update({reconnectAllowedUid:oldUid,reconnectAllowedName:name,reconnectCompletedUid:null});toast(`${name} 재접속 허용됨`);}
 const reconnectInFlight=new Set();
