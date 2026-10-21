@@ -1,4 +1,4 @@
-/* RC31 visual layer. Reads rendered state; never writes to Firebase or changes game controls. */
+/* RC32 visual layer. Reads rendered state; never writes to Firebase or changes game controls. */
 (() => {
   'use strict';
   const root = document.getElementById('app');
@@ -91,5 +91,5 @@
   new MutationObserver(requestSync).observe(root,{childList:true,subtree:true});
   // Labels and layout are read-only. No listeners are added to game action buttons.
   sync();
-  window.BOTC_THEME = Object.freeze({version:'RC5.8.7.31',refresh:requestSync});
+  window.BOTC_THEME = Object.freeze({version:'RC5.8.7.32',refresh:requestSync});
 })();
